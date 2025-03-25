@@ -6,10 +6,10 @@ import type { Job } from '@/lib/types';
 // Fix: Adjusting the function signature for Next.js API routes
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } } // Corrected context type
 ) {
   try {
-    const jobId = params.id;
+    const jobId = context.params.id;
 
     // Get job from Supabase
     const { data: job, error: jobError } = await supabase
