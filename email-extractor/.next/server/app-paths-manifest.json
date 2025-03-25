@@ -1,14 +1,1 @@
-{
-  "/_not-found": "app/_not-found.js",
-  "/api/jobs/[id]/process/route": "app/api/jobs/[id]/process/route.js",
-  "/api/jobs/route": "app/api/jobs/route.js",
-  "/api/jobs/[id]/route": "app/api/jobs/[id]/route.js",
-  "/api/sheets/urls-count/route": "app/api/sheets/urls-count/route.js",
-  "/api/sheets/columns/route": "app/api/sheets/columns/route.js",
-  "/auth/login/page": "app/auth/login/page.js",
-  "/api/jobs/process-batch/route": "app/api/jobs/process-batch/route.js",
-  "/page": "app/page.js",
-  "/dashboard/jobs/[id]/page": "app/dashboard/jobs/[id]/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/dashboard/jobs/page": "app/dashboard/jobs/page.js"
-}
+{}
