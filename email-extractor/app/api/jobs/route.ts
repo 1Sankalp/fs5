@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import { supabase } from '@/lib/supabase';
+import { cookies } from 'next/headers';
 
 // Extract spreadsheet ID from URL
 function getSpreadsheetId(url: string) {
@@ -65,77 +67,107 @@ function saveJobs() {
   }
 }
 
+// GET /api/jobs - Get all jobs for the current user
 export async function GET() {
   try {
-    return NextResponse.json(jobs);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch jobs' },
-      { status: 500 }
-    );
+    // Get user from cookie (using your existing auth)
+    const cookieStore = cookies();
+    const userCookie = cookieStore.get('user');
+    
+    if (!userCookie?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    let user;
+    try {
+      user = JSON.parse(userCookie.value);
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+    
+    // Get jobs from Supabase
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('user_id', user.id || user.username) // Support both Supabase auth and cookie auth
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching jobs:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json({ jobs: data || [] });
+  } catch (error) {
+    console.error('Error in GET /api/jobs:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+// POST /api/jobs - Create a new job
+export async function POST(request: NextRequest) {
   try {
-    const { name, sheetUrl, column } = await request.json();
+    // Parse request body
+    const body = await request.json();
+    const { name, urls } = body;
     
-    if (!name || !sheetUrl || !column) {
-      return NextResponse.json(
-        { error: 'Name, sheet URL and column are required' },
-        { status: 400 }
-      );
+    // Validate required fields
+    if (!name || !urls || !Array.isArray(urls)) {
+      return NextResponse.json({ 
+        error: 'Invalid request - name and urls array are required' 
+      }, { status: 400 });
     }
-
-    const spreadsheetId = getSpreadsheetId(sheetUrl);
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv`;
     
-    // Fetch the sheet data
-    const response = await axios.get(csvUrl);
-    const rows = response.data.split('\n');
-    const headers = rows[0].split(',').map((col: string) => col.trim().replace(/^"|"$/g, ''));
-    const columnIndex = headers.indexOf(column);
+    // Get user from cookie
+    const cookieStore = cookies();
+    const userCookie = cookieStore.get('user');
     
-    if (columnIndex === -1) {
-      throw new Error('Column not found');
+    if (!userCookie?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // Extract URLs
-    const urls = rows.slice(1)
-      .map((row: string) => {
-        const cells = row.split(',');
-        const cell = cells[columnIndex]?.toLowerCase() || '';
-        return cell.includes('http') || cell.includes('www.') ? cells[columnIndex] : null;
+    
+    let user;
+    try {
+      user = JSON.parse(userCookie.value);
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+    
+    // Create job in Supabase
+    const { data, error } = await supabase
+      .from('jobs')
+      .insert({
+        name,
+        urls,
+        user_id: user.id || user.username, // Support both Supabase auth and cookie auth
+        status: 'pending',
+        total_urls: urls.length,
+        processed_urls: 0,
+        current_batch: 0,
+        emails: [],
+        last_processed_timestamp: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
-      .filter(Boolean);
-
-    // Create job
-    const job: Job = {
-      id: Date.now().toString(),
-      name,
-      sheetUrl,
-      column,
-      urls,
-      totalUrls: urls.length,
-      processedUrls: 0,
-      emailsFound: 0,
-      status: 'pending',
-      progress: 0,
-      createdAt: new Date().toISOString()
-    };
-
-    // Store job in memory
-    jobs.push(job);
+      .select();
     
-    // Save jobs to file
-    saveJobs();
-
-    return NextResponse.json(job);
-  } catch (error: any) {
-    console.error('Error creating job:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to create job' },
-      { status: 500 }
-    );
+    if (error) {
+      console.error('Error creating job:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json({ 
+      job: data?.[0],
+      message: 'Job created successfully'
+    }, { status: 201 });
+  } catch (error) {
+    console.error('Error in POST /api/jobs:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 } 

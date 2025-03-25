@@ -553,10 +553,10 @@
       "http://www.shortroundfilms.com/"
     ],
     "totalUrls": 30,
-    "processedUrls": 26,
-    "emailsFound": 35,
-    "status": "processing",
-    "progress": 87,
+    "processedUrls": 30,
+    "emailsFound": 38,
+    "status": "completed",
+    "progress": 100,
     "createdAt": "2025-03-25T14:30:01.050Z",
     "emails": [
       "hernan@techmediafilms.com",
@@ -593,9 +593,12 @@
       "shadesofjadefilms@gmail.com",
       "studio@barrphoto.com",
       "info@cosmicpictures.com",
-      "ashleydallinfilms@gmail.com"
+      "ashleydallinfilms@gmail.com",
+      "hello@snovistudios.com",
+      "contact@shortroundfilms.com",
+      "tyson@shortroundfilms.com"
     ],
     "startTime": 1742913003694,
-    "estimatedCompletionTime": 1742913829116.3076
+    "estimatedCompletionTime": 1742913790372
   }
 ]

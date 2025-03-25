@@ -5,14 +5,17 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import Button from '@/app/components/Button';
 import Card from '@/app/components/Card';
+import { supabase } from '@/lib/supabase';
 
 interface Job {
   id: string;
   name: string;
   status: string;
-  progress: number;
-  emailsFound: number;
-  createdAt: string;
+  total_urls: number;
+  processed_urls: number;
+  emails: string[];
+  created_at: string;
+  updated_at: string;
 }
 
 export default function JobsPage() {
@@ -45,12 +48,12 @@ export default function JobsPage() {
     try {
       const response = await fetch('/api/jobs');
       if (!response.ok) throw new Error('Failed to fetch jobs');
+      
       const data = await response.json();
       // Sort jobs by creation date, newest first
-      setJobs(data.sort((a: Job, b: Job) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
+      setJobs(data.jobs || []);
     } catch (error: any) {
+      console.error('Error fetching jobs:', error);
       setError(error.message);
     } finally {
       setIsLoading(false);
@@ -151,11 +154,12 @@ export default function JobsPage() {
     
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/jobs/${jobToDelete}`, {
-        method: 'DELETE',
-      });
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobToDelete);
       
-      if (!response.ok) throw new Error('Failed to delete job');
+      if (error) throw new Error(error.message);
       
       // Refresh jobs list
       await fetchJobs();
@@ -167,6 +171,10 @@ export default function JobsPage() {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleCreateNewJob = () => {
+    router.push('/dashboard');
   };
 
   return (
@@ -347,15 +355,15 @@ export default function JobsPage() {
                           <div className="w-full bg-gray-200 rounded-full h-2.5">
                             <div 
                               className="bg-blue-600 h-2.5 rounded-full" 
-                              style={{ width: `${job.progress}%` }}
+                              style={{ width: `${job.total_urls ? (job.processed_urls / job.total_urls * 100) : 0}%` }}
                             ></div>
                           </div>
                           <span className="text-xs text-gray-500 mt-1">
-                            {job.progress}%
+                            {job.total_urls ? (job.processed_urls / job.total_urls * 100).toFixed(2) : '0.00'}%
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {job.emailsFound}
+                          {job.emails?.length || 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <div className="flex space-x-2">
