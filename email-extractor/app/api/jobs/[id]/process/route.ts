@@ -3,10 +3,13 @@ import { supabase } from '@/lib/supabase';
 import { EmailExtractor } from '@/lib/emailExtractor';
 import type { Job } from '@/lib/types';
 
+interface Params {
+  id: string;
+}
 // Corrected for Next.js 15: Destructure 'params' directly
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } } // Destructure params here!
+  { params }: { params: Params } // Destructure params here!
 ) {
   try {
     const jobId = params.id;
