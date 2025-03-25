@@ -1,9 +1,5 @@
 {
   "framework": "nextjs",
-  "outputDirectory": "email-extractor/.next",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/email-extractor/$1" }
-  ],
   "redirects": [
     { "source": "/", "destination": "/auth/login", "permanent": false }
   ],

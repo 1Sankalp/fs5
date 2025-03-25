@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "cd email-extractor && npm run dev",
-    "build": "cd email-extractor && npm run build",
+    "build": "cd email-extractor && npm install && npm run build",
     "start": "cd email-extractor && npm run start"
   },
   "dependencies": {

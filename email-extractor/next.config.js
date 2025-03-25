@@ -4,10 +4,6 @@ const nextConfig = {
   swcMinify: true,
   // Add proper trailing slash configuration
   trailingSlash: false,
-  // Enable both the App Router and Pages Router
-  experimental: {
-    appDir: true,
-  },
   redirects: async () => {
     return [
       {
