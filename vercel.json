@@ -1,9 +1,8 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd email-extractor && npm run build",
   "outputDirectory": "email-extractor/.next",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/$1" }
+    { "source": "/(.*)", "destination": "/email-extractor/$1" }
   ],
   "redirects": [
     { "source": "/", "destination": "/auth/login", "permanent": false }
