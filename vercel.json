@@ -1,0 +1,18 @@
+{
+  "projectSettings": {
+    "framework": "nextjs",
+    "buildCommand": "cd email-extractor && npm run build",
+    "outputDirectory": "email-extractor/.next",
+    "rootDirectory": "email-extractor"
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/$1" }
+  ],
+  "redirects": [
+    { "source": "/", "destination": "/auth/login", "permanent": false }
+  ],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "${NEXT_PUBLIC_SUPABASE_URL}",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+  }
+} 

@@ -4,16 +4,32 @@ const nextConfig = {
   swcMinify: true,
   // Add proper trailing slash configuration
   trailingSlash: false,
-  // Ensure we have proper redirects from homepage to login
-  async redirects() {
+  // Enable both the App Router and Pages Router
+  experimental: {
+    appDir: true,
+  },
+  redirects: async () => {
     return [
       {
         source: '/',
         destination: '/auth/login',
-        permanent: true,
+        permanent: false,
       },
     ];
   },
+  // Make sure these paths are handled properly
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/',
+          destination: '/auth/login',
+        },
+      ],
+    };
+  },
+  // Adding the output option
+  output: 'standalone',
 }
 
 module.exports = nextConfig 
