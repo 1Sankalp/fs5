@@ -3,13 +3,13 @@ import { supabase } from '@/lib/supabase';
 import { EmailExtractor } from '@/lib/emailExtractor';
 import type { Job } from '@/lib/types';
 
-// Corrected: Adjusting the function signature for Next.js API routes
+// Corrected for Next.js 15: Destructure 'params' directly
 export async function POST(
   request: NextRequest,
-  context: { params: { id: string } } // Corrected context type here!
+  { params }: { params: { id: string } } // Destructure params here!
 ) {
   try {
-    const jobId = context.params.id;
+    const jobId = params.id;
 
     // Get job from Supabase
     const { data: job, error: jobError } = await supabase
