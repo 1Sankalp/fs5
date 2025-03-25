@@ -1,44 +1,31 @@
 import { NextResponse } from 'next/server';
-import { jobs, Job } from '../../route';
-import fs from 'fs';
-import path from 'path';
-import { extractEmails } from '@/lib/emailExtractor';
-
-// Storage file path
-const storageFile = path.join(process.cwd(), 'data', 'jobs.json');
-
-// Helper function to save jobs to storage
-function saveJobs() {
-  try {
-    fs.writeFileSync(storageFile, JSON.stringify(jobs, null, 2));
-  } catch (error) {
-    console.error('Error saving jobs to storage:', error);
-  }
-}
+import { supabase } from '@/lib/supabase';
+import { EmailExtractor } from '@/lib/emailExtractor';
+import type { Job } from '@/lib/types';
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check if the jobs array is empty (server restarted)
-    if (jobs.length === 0) {
-      return NextResponse.json(
-        { error: 'Cannot process job. Server has been restarted. Please create a new job.' },
-        { status: 400 }
-      );
-    }
-
-    const jobIndex = jobs.findIndex((job) => job.id === params.id);
+    // Get job from Supabase
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', params.id)
+      .single();
     
-    if (jobIndex === -1) {
+    if (jobError) {
+      console.error('Error fetching job:', jobError);
+      return NextResponse.json({ error: jobError.message }, { status: 500 });
+    }
+    
+    if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
         { status: 404 }
       );
     }
-
-    const job = jobs[jobIndex];
     
     // Only process pending jobs
     if (job.status !== 'pending') {
@@ -48,21 +35,30 @@ export async function POST(
       );
     }
 
-    // Update job status
-    job.status = 'processing';
-    job.progress = 0;
-    job.emails = [];
-    job.startTime = Date.now();
-    job.estimatedCompletionTime = calculateEstimatedCompletionTime(job.totalUrls);
+    // Update job status to processing
+    const { error: updateError } = await supabase
+      .from('jobs')
+      .update({
+        status: 'processing',
+        updated_at: new Date().toISOString(),
+        last_processed_timestamp: new Date().toISOString()
+      })
+      .eq('id', params.id);
     
-    // Save job status change to file
-    saveJobs();
+    if (updateError) {
+      console.error('Error updating job status:', updateError);
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
 
-    // Start processing in the background
+    // Start processing in the background (in real production, this would be a background job)
     processJob(job);
 
-    return NextResponse.json({ message: 'Job processing started' });
+    return NextResponse.json({ 
+      message: 'Job processing started',
+      jobId: params.id
+    });
   } catch (error: any) {
+    console.error('Error in POST /api/jobs/[id]/process:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to process job' },
       { status: 500 }
@@ -70,70 +66,95 @@ export async function POST(
   }
 }
 
-// Calculate estimated completion time based on number of URLs
-function calculateEstimatedCompletionTime(totalUrls: number): number {
-  // We add 1 second per URL + a small buffer (avg processing time)
-  const processingTimePerUrl = 1000; // 1 second per URL
-  const buffer = 5000; // 5 second buffer
-  return Date.now() + (totalUrls * processingTimePerUrl) + buffer;
-}
-
-// Update estimated completion time based on current progress
-function updateEstimatedCompletionTime(job: Job, processedUrls: number): void {
-  // Use current time if startTime is undefined
-  const startTime = job.startTime || Date.now();
-  const elapsedTime = Date.now() - startTime;
-  const remainingUrls = job.totalUrls - processedUrls;
-  
-  if (processedUrls > 0 && remainingUrls > 0) {
-    // Calculate average time per URL based on current performance
-    const avgTimePerUrl = elapsedTime / processedUrls;
-    // Estimate remaining time
-    const remainingTime = avgTimePerUrl * remainingUrls;
-    // Update estimated completion time
-    job.estimatedCompletionTime = Date.now() + remainingTime;
-  }
-}
-
 async function processJob(job: Job) {
   const emails = new Set<string>();
   
-  for (let i = 0; i < job.urls.length; i++) {
-    try {
-      const url = job.urls[i];
-      // Use the improved email extractor
-      const extractedEmails = await extractEmails(url);
+  try {
+    // Process URLs in batches of 5
+    const BATCH_SIZE = 5;
+    const totalBatches = Math.ceil(job.urls.length / BATCH_SIZE);
+    
+    for (let batch = 0; batch < totalBatches; batch++) {
+      const startIdx = batch * BATCH_SIZE;
+      const endIdx = Math.min(startIdx + BATCH_SIZE, job.urls.length);
+      const batchUrls = job.urls.slice(startIdx, endIdx);
       
-      // Add unique emails to the set
-      extractedEmails.forEach(email => emails.add(email));
+      const batchEmails: string[] = [];
       
-      // Update job progress
-      job.processedUrls = i + 1;
-      job.progress = Math.round((job.processedUrls / job.totalUrls) * 100);
-      job.emailsFound = emails.size;
-      job.emails = Array.from(emails);
-      
-      // Update estimated completion time
-      updateEstimatedCompletionTime(job, job.processedUrls);
-      
-      // Save job updates to file periodically (every 5 URLs)
-      if (i % 5 === 0 || i === job.urls.length - 1) {
-        saveJobs();
+      // Process each URL in the batch
+      for (const url of batchUrls) {
+        try {
+          // Use the email extractor
+          const extractor = new EmailExtractor(url);
+          const extractedEmails = await extractor.extractEmails();
+          batchEmails.push(...extractedEmails);
+          
+          // Update processed URLs count
+          const { error: progressError } = await supabase
+            .from('jobs')
+            .update({ 
+              processed_urls: job.processed_urls + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', job.id);
+            
+          if (progressError) {
+            console.error(`Error updating progress for job ${job.id}:`, progressError);
+          }
+        } catch (urlError) {
+          console.error(`Error processing URL ${url} in job ${job.id}:`, urlError);
+          // Continue with next URL even if one fails
+        }
       }
       
-      // Add a small delay to avoid rate limiting
+      // Add unique emails to the set
+      batchEmails.forEach(email => emails.add(email));
+      
+      // Update the job with new emails
+      const { error: updateError } = await supabase
+        .from('jobs')
+        .update({
+          emails: Array.from(emails),
+          current_batch: batch + 1,
+          last_processed_timestamp: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', job.id);
+        
+      if (updateError) {
+        console.error(`Error updating emails for job ${job.id}:`, updateError);
+      }
+      
+      // Small delay between batches
       await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error(`Error processing URL ${job.urls[i]}:`, error);
-      // Continue with next URL
+    }
+    
+    // Mark job as completed
+    const { error: completionError } = await supabase
+      .from('jobs')
+      .update({
+        status: 'completed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', job.id);
+      
+    if (completionError) {
+      console.error(`Error marking job ${job.id} as completed:`, completionError);
+    }
+  } catch (error) {
+    console.error(`Error processing job ${job.id}:`, error);
+    
+    // Mark job as failed
+    const { error: failError } = await supabase
+      .from('jobs')
+      .update({
+        status: 'failed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', job.id);
+      
+    if (failError) {
+      console.error(`Error marking job ${job.id} as failed:`, failError);
     }
   }
-  
-  // Mark job as completed
-  job.status = 'completed';
-  job.progress = 100;
-  job.estimatedCompletionTime = Date.now(); // Set to current time since it's complete
-  
-  // Save final job state to file
-  saveJobs();
 } 

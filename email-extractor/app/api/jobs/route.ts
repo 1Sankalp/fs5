@@ -56,7 +56,7 @@ try {
 }
 
 // In-memory storage for jobs (initialized from file if available)
-export const jobs: Job[] = loadedJobs;
+const jobs: Job[] = loadedJobs;
 
 // Helper function to save jobs to storage
 function saveJobs() {

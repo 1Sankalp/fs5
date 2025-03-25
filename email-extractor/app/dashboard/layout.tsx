@@ -18,7 +18,7 @@ export default function DashboardLayout({
 
   // Check if the current path is the root dashboard or a job details page
   const isCreateJobActive = pathname === '/dashboard';
-  const isJobsActive = pathname === '/dashboard/jobs' || pathname.startsWith('/dashboard/jobs/');
+  const isJobsActive = pathname === '/dashboard/jobs' || (pathname && pathname.startsWith('/dashboard/jobs/'));
 
   useEffect(() => {
     setIsClient(true);

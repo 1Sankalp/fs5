@@ -1,43 +1,21 @@
 import { NextResponse } from 'next/server';
-import { jobs } from '../route';
-import fs from 'fs';
-import path from 'path';
-
-// Storage file path
-const storageFile = path.join(process.cwd(), 'data', 'jobs.json');
-
-// Helper function to save jobs to storage
-function saveJobs() {
-  try {
-    fs.writeFileSync(storageFile, JSON.stringify(jobs, null, 2));
-  } catch (error) {
-    console.error('Error saving jobs to storage:', error);
-  }
-}
+import { supabase } from '@/lib/supabase';
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check if the jobs array is empty (server restarted)
-    if (jobs.length === 0) {
-      // For demo purposes, create a mock job with the requested ID
-      return NextResponse.json({
-        id: params.id,
-        name: "Job " + params.id,
-        status: "pending",
-        progress: 0,
-        totalUrls: 30,
-        processedUrls: 0,
-        emailsFound: 0,
-        createdAt: new Date().toISOString(),
-        urls: ["https://example.com"],
-        emails: []
-      });
+    const { data: job, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', params.id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching job:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    const job = jobs.find((job) => job.id === params.id);
     
     if (!job) {
       return NextResponse.json(
@@ -48,6 +26,7 @@ export async function GET(
 
     return NextResponse.json(job);
   } catch (error: any) {
+    console.error('Error in GET /api/jobs/[id]:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch job' },
       { status: 500 }
@@ -60,26 +39,30 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const jobIndex = jobs.findIndex((job) => job.id === params.id);
+    const { error, count } = await supabase
+      .from('jobs')
+      .delete()
+      .eq('id', params.id)
+      .select('count');
     
-    if (jobIndex === -1) {
+    if (error) {
+      console.error('Error deleting job:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    if (count === 0) {
       return NextResponse.json(
         { error: 'Job not found' },
         { status: 404 }
       );
     }
     
-    // Remove the job from the array
-    const removedJob = jobs.splice(jobIndex, 1)[0];
-    
-    // Save updated jobs to storage
-    saveJobs();
-    
     return NextResponse.json({ 
-      message: `Job "${removedJob.name}" successfully deleted`,
-      job: removedJob
+      message: `Job successfully deleted`,
+      id: params.id
     });
   } catch (error: any) {
+    console.error('Error in DELETE /api/jobs/[id]:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to delete job' },
       { status: 500 }
