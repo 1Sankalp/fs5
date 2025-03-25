@@ -553,10 +553,10 @@
       "http://www.shortroundfilms.com/"
     ],
     "totalUrls": 30,
-    "processedUrls": 11,
-    "emailsFound": 20,
+    "processedUrls": 16,
+    "emailsFound": 27,
     "status": "processing",
-    "progress": 37,
+    "progress": 53,
     "createdAt": "2025-03-25T14:30:01.050Z",
     "emails": [
       "hernan@techmediafilms.com",
@@ -578,9 +578,16 @@
       "jackiesiggardphotography@gmail.com",
       "hello@alexdronephotography.com",
       "chase@busathfilms.com",
-      "busathfilms@gmail.com"
+      "busathfilms@gmail.com",
+      "pl@perrylayneproductions.com",
+      "evan@whoshootsyourfilms.com",
+      "contactus@saltyblock.com",
+      "dipalmaphotography@gmail.com",
+      "dipalmaproductions@gmail.com",
+      "hello@cassstudios.com",
+      "info@nataliecass.com"
     ],
     "startTime": 1742913003694,
-    "estimatedCompletionTime": 1742913622315.818
+    "estimatedCompletionTime": 1742913781447.75
   }
 ]
