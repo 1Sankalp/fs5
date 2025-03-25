@@ -553,10 +553,10 @@
       "http://www.shortroundfilms.com/"
     ],
     "totalUrls": 30,
-    "processedUrls": 6,
-    "emailsFound": 15,
+    "processedUrls": 11,
+    "emailsFound": 20,
     "status": "processing",
-    "progress": 20,
+    "progress": 37,
     "createdAt": "2025-03-25T14:30:01.050Z",
     "emails": [
       "hernan@techmediafilms.com",
@@ -573,9 +573,14 @@
       "892-0300info@digitalbytes.tvtoggle",
       "info@digitalbytes.tv",
       "michael@levitateusa.com",
-      "sales@levitateusa.com"
+      "sales@levitateusa.com",
+      "help@smugmug.com",
+      "jackiesiggardphotography@gmail.com",
+      "hello@alexdronephotography.com",
+      "chase@busathfilms.com",
+      "busathfilms@gmail.com"
     ],
     "startTime": 1742913003694,
-    "estimatedCompletionTime": 1742913364314
+    "estimatedCompletionTime": 1742913622315.818
   }
 ]
