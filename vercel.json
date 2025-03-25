@@ -1,5 +1,11 @@
 {
-  "framework": "nextjs",
+  "version": 2,
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "email-extractor/.next",
+  "github": {
+    "silent": true
+  },
   "redirects": [
     { "source": "/", "destination": "/auth/login", "permanent": false }
   ],
