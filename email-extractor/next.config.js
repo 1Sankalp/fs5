@@ -4,12 +4,12 @@ const nextConfig = {
   swcMinify: true,
   // Add proper trailing slash configuration
   trailingSlash: false,
-  // Ensure we have proper redirects from homepage to dashboard
+  // Ensure we have proper redirects from homepage to login
   async redirects() {
     return [
       {
         source: '/',
-        destination: '/dashboard',
+        destination: '/auth/login',
         permanent: true,
       },
     ];
