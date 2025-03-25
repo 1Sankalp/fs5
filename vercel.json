@@ -1,10 +1,7 @@
 {
-  "projectSettings": {
-    "framework": "nextjs",
-    "buildCommand": "cd email-extractor && npm run build",
-    "outputDirectory": "email-extractor/.next",
-    "rootDirectory": "email-extractor"
-  },
+  "framework": "nextjs",
+  "buildCommand": "cd email-extractor && npm run build",
+  "outputDirectory": "email-extractor/.next",
   "rewrites": [
     { "source": "/(.*)", "destination": "/$1" }
   ],
