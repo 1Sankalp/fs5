@@ -3,16 +3,19 @@ import { supabase } from '@/lib/supabase';
 import { EmailExtractor } from '@/lib/emailExtractor';
 import type { Job } from '@/lib/types';
 
+// Fix: Adjusting the function signature for Next.js API routes
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const jobId = params.id;
+
     // Get job from Supabase
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', jobId)
       .single();
     
     if (jobError) {
@@ -43,7 +46,7 @@ export async function POST(
         updated_at: new Date().toISOString(),
         last_processed_timestamp: new Date().toISOString()
       })
-      .eq('id', params.id);
+      .eq('id', jobId);
     
     if (updateError) {
       console.error('Error updating job status:', updateError);
@@ -55,7 +58,7 @@ export async function POST(
 
     return NextResponse.json({ 
       message: 'Job processing started',
-      jobId: params.id
+      jobId
     });
   } catch (error: any) {
     console.error('Error in POST /api/jobs/[id]/process:', error);
@@ -157,4 +160,4 @@ async function processJob(job: Job) {
       console.error(`Error marking job ${job.id} as failed:`, failError);
     }
   }
-} 
+}
