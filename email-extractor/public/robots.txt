@@ -1,0 +1,6 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location (if you have one)
+# Sitemap: https://fs-email-extract.vercel.app/sitemap.xml 
